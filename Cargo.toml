@@ -1,0 +1,18 @@
+[package]
+name = "firelight"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ws281x = { git = "https://github.com/lava/rust-ws281x", branch="raspberry-zero-w" }
+rouille = "3.5.0"
+serde = {version = "1.0.136", features = ["derive"]}
+serde_json = "1.0.78"
+
+[lib]
+name = "firelight"
+path = "src/lib.rs"
+
+[[bin]]
+name = "firelight-server"
+path = "src/bin/firelight-server.rs"
