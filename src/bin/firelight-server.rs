@@ -2,8 +2,8 @@
 #[macro_use]
 extern crate rouille;
 
-use std::io;
 use std::env;
+use std::io;
 use std::sync::Mutex;
 
 use serde::Serialize;
@@ -14,15 +14,19 @@ struct StatusResponse {
 }
 
 struct ServerState {
-  on: bool,
+    on: bool,
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let url = if args.len() > 1 { args[1].as_str() } else { "0.0.0.0:1313" };
+    let url = if args.len() > 1 {
+        args[1].as_str()
+    } else {
+        "0.0.0.0:1313"
+    };
     print!("starting server listening on {}\n", url);
 
-    let server_state = Mutex::new(ServerState{on: false});
+    let server_state = Mutex::new(ServerState { on: false });
 
     rouille::start_server(url, move |request| {
         rouille::log(&request, io::stdout(), || {
@@ -65,4 +69,3 @@ fn main() {
         })
     });
 }
-
