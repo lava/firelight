@@ -4,9 +4,10 @@ extern crate ws281x;
 use std::sync::mpsc;
 // use anyhow::anyhow;
 
+#[derive(Copy, Clone, Debug)]
 pub struct Control {
     pub on: bool,
-    brightness: u8,
+    pub brightness: u8,
     // TODO:
     //color_rgb: (u8, u8, u8);
 }
@@ -110,6 +111,7 @@ impl Handle {
 
     /// Fully set state.
     pub fn control(&mut self, control: Control) {
+        self.state = control;
         let _ = self.tx.send(ControlMsg::External(control));
     }
 
@@ -156,7 +158,7 @@ impl Handle {
     }
 } // impl handle
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct LedColor {
     // r, g, b
     data: [u8; 3],
@@ -205,6 +207,8 @@ fn light_control_thread(mut data: ControlThreadData) -> () {
             }
             *led = colors[idx].to_u32_rgb();
         }
+
+        println!("rendering colors {:?}", colors);
 
         data.hw.render().unwrap();
         data.hw.wait().unwrap();
