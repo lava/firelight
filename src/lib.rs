@@ -181,19 +181,19 @@ pub fn render_fire(t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
     let mut noise = Vec::new();
     for (i, _) in strands.iter().enumerate() {
         // Scale return value from [-1, 1] to [0, 1]
-        noise.push((perlin.get([t, 0.0]) + 1.0) / 2.0);
+        //noise.push((perlin.get([t, 0.0]) + 1.0) / 2.0);
         // TODO: independent noise for all strands
-        // noise.push((perlin.get([t, i as f64]) + 1.0) / 2.0);
+        noise.push((perlin.get([t, i as f64]) + 1.0) / 2.0);
     }
-    println!("noise: {:?}", noise);
+    //println!("noise: {:?}", noise);
     let mut result = Vec::new();
     for (i, strand) in strands.iter().enumerate() {
         let num = (noise[i] * (*strand as f64)) as usize;
         for x in 0..num {
-            result.push(LedColor::from_u32_rgb(0xffffff));
+            result.push(LedColor::from_u32_rgb(0x0));
         }
         for x in num..*strand {
-            result.push(LedColor::from_u32_rgb(0x0));
+            result.push(LedColor::from_u32_rgb(0xffffff));
         }
     }
     return result;
@@ -225,7 +225,7 @@ fn light_control_thread(mut data: ControlThreadData) -> () {
             *led = color.to_u32_rgb();
         }
 
-        println!("rendering colors {:?}", colors);
+        //println!("rendering colors {:?}", colors);
 
         data.hw.render().unwrap();
         data.hw.wait().unwrap();
