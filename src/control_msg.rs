@@ -1,6 +1,6 @@
 #[derive(Copy, Clone, Debug)]
 pub enum Effect {
-    StaticLight,
+    Static,
     Fire,
 }
 
