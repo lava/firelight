@@ -11,7 +11,7 @@ fn main() {
             ws281x::channel::new()
                 .pin(18)
                 .count(128)
-                .brightness(55)
+                .brightness(255)
                 .build()
                 .unwrap(),
         )

@@ -1,6 +1,7 @@
 extern crate ws281x;
 
 use std::sync::mpsc;
+// use anyhow::anyhow;
 
 pub struct Control {
     pub on: bool,
@@ -28,7 +29,6 @@ struct ControlThreadData {
     rx: mpsc::Receiver<ControlMsg>,
 
     hw: ws281x::handle::Handle,
-    strands: Vec<usize>,
     strands_cum: Vec<usize>,
 
     // the last received control msg
@@ -43,10 +43,23 @@ impl Control {
 
 
 impl Handle {
+    /// Note that this can currently only run on a supported Raspberry Pi model,
+    /// because it needs to know the correct offsets for video core memory and
+    /// peripheral memory. To run on other devices, the C headers in the `rust-ws281x`
+    /// dependency must be patched to include the relevant definitions for the
+    /// new hardware platform.
+    ///
+    /// Arguments:
+    ///   rpi_channel: The PWM channel to which the LED strip is connected. Usually 0.
+    ///   rpi_dma: The DMA number to be used. This identifies the memory block used by the
+    ///            DMA controller. Can be any number 0-15 that is *not* concurrently used
+    ///            by another process or hardware on the same device.
+    ///   rpi_pin: The pin to which the LED strip is attached. Will usually be one of the
+    ///            PWM pins 12,18 for channel PWM0 or 13,19 for channel PWM1.
     pub fn new(
-        ws281x_dma: i32,
-        ws281x_channel: usize,
-        ws281x_pin: i32,
+        rpi_dma: i32,
+        rpi_channel: usize,
+        rpi_pin: i32,
         strands: Vec<usize>,
     ) -> Handle {
         let (tx, rx) = mpsc::channel();
@@ -58,25 +71,29 @@ impl Handle {
                 cumsum.push(prev + strand);
                 total += strand;
             }
-            // FIXME: unwrap
-            // FIXME: add an option for initial brightness
+            // The `rust-ws2811x` library has a built-in `brightness` parameter,
+            // that's used to scale every color channel by `c = c * (brightness+1) / 256`.
+            // We don't expose that to the user and instead set it to 255 to pass
+            // through the exact rgb values that we put in, letting the user take
+            // care of handling color spaces, brightness etc.
             let hw_channel = ws281x::channel::new()
-                .pin(ws281x_pin)
+                .pin(rpi_pin)
                 .count(total)
-                .brightness(55)
+                .brightness(255)
                 .build()
                 .unwrap();
-            // FIXME: unwrap
+
+            // FIXME: move handler/channel creation into
+            // a separate `lightingd` binary.
             let handler = ws281x::handle::new()
-                .dma(ws281x_dma)
-                .channel(ws281x_channel, hw_channel)
+                .dma(rpi_dma)
+                .channel(rpi_channel, hw_channel)
                 .build()
                 .unwrap();
 
             let control_data = ControlThreadData {
                 rx: rx,
                 hw: handler,
-                strands: strands,
                 strands_cum: cumsum,
                 state: Control::default(),
             };
@@ -101,8 +118,13 @@ impl Handle {
         self.control(toggled);
     }
 
-    pub fn adjust_brightness(&mut self, brightness: u8) {
+    pub fn set_brightness(&mut self, brightness: u8) {
         let adjusted = Control{on: self.state.on, brightness: brightness};    
+        self.control(adjusted);
+    }
+
+    pub fn adjust_brightness(&mut self, brightness_delta: u8) {
+        let adjusted = Control{on: self.state.on, brightness: self.state.brightness + brightness_delta};    
         self.control(adjusted);
     }
 
@@ -119,15 +141,42 @@ impl Handle {
     }
 } // impl handle
 
+#[derive(Clone, Copy)]
+struct LedColor {
+    // r, g, b
+    data: [u8; 3],
+}
+
+impl LedColor {
+    // Initialize from a u32 that looks like 0x00RRGGBB.
+    fn from_u32_rgb(x: u32) -> LedColor {
+        return LedColor{data: [((x >> 16) & 0xff) as u8, ((x >> 8) & 0xff) as u8, (x & 0xff) as u8]};
+    }
+
+    // Render as 0x00RRGGBB.
+    fn to_u32_rgb(&self) -> u32 {
+        return ((self.data[0] as u32) << 16) | ((self.data[1] as u32) << 8) | (self.data[0] as u32);
+    }
+
+    fn naive_scale(&mut self, scale: u8) {
+        let scale32 = scale as u32;
+        self.data[0] = (self.data[0] as u32 * (scale32 + 1) / 256) as u8;
+        self.data[1] = (self.data[1] as u32 * (scale32 + 1) / 256) as u8;
+        self.data[2] = (self.data[1] as u32 * (scale32 + 1) / 256) as u8;
+    }
+}
+
 fn light_control_thread(mut data: ControlThreadData) -> () {
     loop {
+        let on = LedColor::from_u32_rgb(0xffffff);
+        let off = LedColor::from_u32_rgb(0x0);
+        let colors_on = vec![on, on, on, on];
+        let colors_off = vec![off, off, off, off];
+        let mut colors = if data.state.on { colors_on } else { colors_off };
+        for color in &mut colors {
+            color.naive_scale(data.state.brightness);
+        }
         let mut idx = 0;
-
-        let colors_on = vec![0xffffff, 0xffffff, 0xffffff, 0xffffff];
-        let colors_off = vec![0x0, 0x0, 0x0, 0x0];
-        let colors = if data.state.on { colors_on } else { colors_off };
-        data.hw.channel_mut(0).set_brightness(data.state.brightness);
-        // TODO: support multiple channels
         for (i, led) in data.hw.channel_mut(0).leds_mut().iter_mut().enumerate() {
             while idx < data.strands_cum.len() && i >= data.strands_cum[idx] {
                 idx += 1;
@@ -135,7 +184,7 @@ fn light_control_thread(mut data: ControlThreadData) -> () {
             if idx >= colors.len() {
                 break;
             }
-            *led = colors[idx];
+            *led = colors[idx].to_u32_rgb();
         }
 
         data.hw.render().unwrap();

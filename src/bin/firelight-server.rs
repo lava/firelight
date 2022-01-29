@@ -1,6 +1,7 @@
 #![allow(unreachable_code)]
 #[macro_use]
 extern crate rouille;
+extern crate serde;
 
 use std::env;
 use std::io;
