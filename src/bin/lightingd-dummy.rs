@@ -1,5 +1,6 @@
 use std::io::Read;
-
+use std::path::Path;
+use std::path::PathBuf;
 use std::os::unix::net::UnixListener;
 use std::os::unix::net::UnixStream;
 use std::sync::Arc;
@@ -26,29 +27,35 @@ fn handle_client(mut stream: UnixStream) -> anyhow::Result<()> {
     loop {
         let n = stream.read(&mut as_bytes(&mut buffer)[..])?;
         println!("got {} bytes", n);
+        if n <= 0 {
+            break;
+        }
     }
+    return Ok(());
 }
 
 /// A debug version of lightingd that only prints the color pattern it would apply.
 /// TODO: Open a window and draw results.
 fn main() -> anyhow::Result<()> {
     let args = DaemonArgs::parse();
-    let state = DaemonState {};
-    let handle = Arc::new(state);
+    // It would be cleaner to delete this on shutdown using RAII,
+    // but rust doesn't unwind after signals.
+    if Path::new(&args.unix_socket).exists() {
+        std::fs::remove_file(&args.unix_socket)?;
+    }
     let listener = UnixListener::bind(&args.unix_socket)?;
     println!("listening on {}", args.unix_socket);
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                /* connection succeeded */
+                println!("new client");
                 thread::spawn(|| handle_client(stream));
             }
             Err(err) => {
-                /* connection failed */
-                break;
+                println!("couldn't accept client: {}", err);
+                continue;
             }
         }
     }
-    std::fs::remove_file(&args.unix_socket)?;
     return Ok(());
 }
