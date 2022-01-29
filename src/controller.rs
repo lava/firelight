@@ -25,6 +25,11 @@ impl LedStripController {
         rpi_pin: i32,
         leds_count: usize,
     ) -> anyhow::Result<LedStripController> {
+        // The `rust-ws2811x` library has a built-in `brightness` parameter,
+        // that's used to scale every color channel by `c = c * (brightness+1) / 256`.
+        // We don't expose that to the user and instead set it to 255 to pass
+        // through the exact rgb values that we put in, letting the outside take
+        // care of handling color spaces, brightness etc.
         let hw_channel = ws281x::channel::new()
             .pin(rpi_pin)
             .count(leds_count)
@@ -32,8 +37,6 @@ impl LedStripController {
             .build()
             .map_err(|_e| anyhow!("failed to create channel"))?;
 
-        // FIXME: move handler/channel creation into
-        // a separate `lightingd` binary.
         let handler = ws281x::handle::new()
             .dma(rpi_dma)
             .channel(rpi_channel, hw_channel)

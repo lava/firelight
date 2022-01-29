@@ -35,7 +35,6 @@ struct ControlThreadData {
 
     hw: ws281x::handle::Handle,
     strands: Vec<usize>,
-    strands_cum: Vec<usize>,
 
     // the last received control msg
     state: Control,
@@ -45,13 +44,7 @@ impl Handle {
     pub fn new(rpi_dma: i32, rpi_channel: usize, rpi_pin: i32, strands: Vec<usize>) -> Handle {
         let (tx, rx) = mpsc::channel();
         let join_handle = std::thread::spawn(move || {
-            let mut total = 0;
-            let mut cumsum = Vec::new();
-            for strand in &strands {
-                let prev = cumsum.last().copied().unwrap_or(0);
-                cumsum.push(prev + strand);
-                total += strand;
-            }
+            let total = strands.iter().sum();
             // The `rust-ws2811x` library has a built-in `brightness` parameter,
             // that's used to scale every color channel by `c = c * (brightness+1) / 256`.
             // We don't expose that to the user and instead set it to 255 to pass
@@ -76,7 +69,6 @@ impl Handle {
                 rx: rx,
                 hw: handler,
                 strands: strands,
-                strands_cum: cumsum,
                 state: Control::default(),
             };
             return light_control_thread(control_data);
@@ -189,14 +181,30 @@ pub fn render_fire(t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
     let mut result = Vec::new();
     for (i, strand) in strands.iter().enumerate() {
         let num = (noise[i] * (*strand as f64)) as usize;
-        for x in 0..num {
+        for _ in 0..num {
             result.push(LedColor::from_u32_rgb(0x0));
         }
-        for x in num..*strand {
+        for _ in num..*strand {
             result.push(LedColor::from_u32_rgb(0xffffff));
         }
     }
     return result;
+}
+
+pub fn render_static(_t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
+        // let mut cumsum = Vec::new();
+        // for strand in &strands {
+        //     let prev = cumsum.last().copied().unwrap_or(0);
+        //     cumsum.push(prev + strand);
+        // }
+        let on = LedColor::from_u32_rgb(0xffffff);
+        let mut result = Vec::new();
+        for strand in strands {
+            for _ in 0..*strand {
+                result.push(on);
+            }
+        }
+        return result;
 }
 
 fn light_control_thread(mut data: ControlThreadData) -> () {
@@ -204,24 +212,13 @@ fn light_control_thread(mut data: ControlThreadData) -> () {
     let delta = 0.01;
     loop {
         t += delta;
-        // let on = LedColor::from_u32_rgb(0xffffff);
         let off = LedColor::from_u32_rgb(0x0);
-        // let colors_on = vec![on, on, on, on];
-        // let colors_off = vec![off, off, off, off];
-        // let mut colors = if data.state.on { colors_on } else { colors_off };
-        // for color in &mut colors {
-        //     color.naive_scale(data.state.brightness);
-        // }
         let colors = render_fire(t, &data.strands);
-        let mut idx = 0;
         for (i, led) in data.hw.channel_mut(0).leds_mut().iter_mut().enumerate() {
-            let color = if data.state.on { colors[i] } else { off };
-            // while idx < data.strands_cum.len() && i >= data.strands_cum[idx] {
-            //     idx += 1;
-            // }
-            // if idx >= colors.len() {
-            //     break;
-            // }
+            let mut color = if data.state.on { colors[i] } else { off };
+            if data.state.on {
+                color.naive_scale(data.state.brightness)
+            }
             *led = color.to_u32_rgb();
         }
 
