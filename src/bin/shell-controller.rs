@@ -4,11 +4,18 @@ fn main() {
     device.set_brightness(128);
     println!("press enter to toggle light status");
     let mut input = String::new();
+    let mut delta = 20;
     loop {
         std::io::stdin()
             .read_line(&mut input)
             .expect("error: unable to read user input");
         device.toggle();
-        device.adjust_brightness(20);
+        device.adjust_brightness(delta);
+        if device.brightness() == 255 {
+            delta = -20;
+        }
+        if device.brightness() == 0 {
+            delta = 20;
+        }
     }
 }

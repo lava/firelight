@@ -1,4 +1,5 @@
 extern crate ws281x;
+// extern crate noise;
 
 use std::sync::mpsc;
 // use anyhow::anyhow;
@@ -107,12 +108,14 @@ impl Handle {
         };
     }
 
-    // fully set state
+    /// Fully set state.
     pub fn control(&mut self, control: Control) {
         let _ = self.tx.send(ControlMsg::External(control));
     }
 
-    // convenience functions
+    // Convenience functions to partially change the state.
+
+    /// Toggle the lamp on/off.
     pub fn toggle(&mut self) {
         let toggled = Control{on: !self.state.on, brightness: self.state.brightness};
         self.control(toggled);
@@ -123,11 +126,23 @@ impl Handle {
         self.control(adjusted);
     }
 
-    pub fn adjust_brightness(&mut self, brightness_delta: u8) {
-        let adjusted = Control{on: self.state.on, brightness: self.state.brightness + brightness_delta};    
+    pub fn adjust_brightness(&mut self, brightness_delta: i32) {
+        let brightness = if brightness_delta > 0 {
+            self.state.brightness.saturating_add(brightness_delta as u8)
+        } else {
+            self.state.brightness.saturating_sub(-brightness_delta as u8)
+        };
+        let adjusted = Control{on: self.state.on, brightness: brightness};    
         self.control(adjusted);
     }
 
+    // Getters for the current state.
+
+    pub fn brightness(&self) -> u8 {
+        return self.state.brightness;
+    }
+
+    /// Destructor, joins the control thread.
     pub fn drop(&mut self) {
         let _ = self.tx.send(ControlMsg::Shutdown);
         // This is apparently a standard idiom known as the "option dance" [1]
@@ -164,6 +179,10 @@ impl LedColor {
         self.data[1] = (self.data[1] as u32 * (scale32 + 1) / 256) as u8;
         self.data[2] = (self.data[1] as u32 * (scale32 + 1) / 256) as u8;
     }
+}
+
+fn render_fire(t: f32, strands: &Vec<u32>, state: Control) {
+    // let perlin = noise::Perlin::default();
 }
 
 fn light_control_thread(mut data: ControlThreadData) -> () {
