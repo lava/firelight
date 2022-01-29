@@ -22,11 +22,12 @@ pub(crate) enum ControlMsg {
 }
 
 impl Control {
+    // Also the initial state when booting
     pub fn default() -> Control {
         return Control {
             on: false,
             brightness: 255,
-            effect: Effect::StaticLight,
+            effect: Effect::Fire,
         };
     }
 }

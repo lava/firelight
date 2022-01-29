@@ -17,7 +17,7 @@ use std::time::Duration;
 use noise::NoiseFn;
 use noise::Perlin;
 
-use crate::control_msg::Control;
+use crate::control_msg::Control; // FIXME - remove this!
 use crate::control_msg::ControlMsg;
 
 pub struct Handle {
