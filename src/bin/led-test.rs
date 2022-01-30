@@ -35,8 +35,7 @@ fn blink_pattern(handle: &mut ws281x::handle::Handle) {
         for (i, led) in handle.channel_mut(0).leds_mut().iter_mut().enumerate() {
             if i % 2 == check {
                 *led = 0
-            }
-            else {
+            } else {
                 *led = 0xffffff;
             }
         }

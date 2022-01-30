@@ -1,15 +1,15 @@
 // TODO: re-evaluate pub
 
-use std::sync::mpsc;
-use std::io::Write;
 use noise::NoiseFn;
 use noise::Perlin;
+use std::io::Write;
+use std::sync::mpsc;
 
-use std::time::Duration;
 use std::os::unix::net::UnixStream;
+use std::time::Duration;
 
-use crate::control_msg::ControlMsg;
 use crate::control_msg::Control;
+use crate::control_msg::ControlMsg;
 use crate::control_msg::Effect;
 use crate::daemon;
 
@@ -34,7 +34,11 @@ pub(crate) fn render_thread(mut data: RenderThreadData) -> () {
         };
         let mut out = Vec::new();
         for original_color in colors {
-            let brightness = if data.state.on { data.state.brightness } else { 0 };
+            let brightness = if data.state.on {
+                data.state.brightness
+            } else {
+                0
+            };
             let mut color = original_color;
             color.naive_scale(brightness);
             out.push(color.to_u32_rgb());
@@ -85,7 +89,6 @@ impl LedColor {
     }
 }
 
-
 fn render_fire(t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
     let perlin = Perlin::default();
     let mut noise = Vec::new();
@@ -110,17 +113,17 @@ fn render_fire(t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
 }
 
 fn render_static(_t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
-        // let mut cumsum = Vec::new();
-        // for strand in &strands {
-        //     let prev = cumsum.last().copied().unwrap_or(0);
-        //     cumsum.push(prev + strand);
-        // }
-        let on = LedColor::from_u32_rgb(0xffffff);
-        let mut result = Vec::new();
-        for strand in strands {
-            for _ in 0..*strand {
-                result.push(on);
-            }
+    // let mut cumsum = Vec::new();
+    // for strand in &strands {
+    //     let prev = cumsum.last().copied().unwrap_or(0);
+    //     cumsum.push(prev + strand);
+    // }
+    let on = LedColor::from_u32_rgb(0xffffff);
+    let mut result = Vec::new();
+    for strand in strands {
+        for _ in 0..*strand {
+            result.push(on);
         }
-        return result;
+    }
+    return result;
 }

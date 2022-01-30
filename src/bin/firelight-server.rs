@@ -3,10 +3,10 @@
 extern crate rouille;
 extern crate serde;
 
-use std::io;
-use std::sync::Mutex;
-use std::os::unix::net::UnixStream;
 use clap::Parser;
+use std::io;
+use std::os::unix::net::UnixStream;
+use std::sync::Mutex;
 
 use serde::Serialize;
 
@@ -20,7 +20,10 @@ struct StatusResponse {
 
 impl StatusResponse {
     fn from_control(control: Control) -> StatusResponse {
-        return StatusResponse{on: control.on, brightness: control.brightness};
+        return StatusResponse {
+            on: control.on,
+            brightness: control.brightness,
+        };
     }
 }
 
@@ -34,7 +37,10 @@ impl ServerState {
         let strands = vec![39, 31, 38, 20];
         // let handle = firelight::Handle::new(5, 0, 18, strands);
         let handle = firelight::Handle::new(socket, strands);
-        return ServerState{last_state: Control::default(), firelight: handle};
+        return ServerState {
+            last_state: Control::default(),
+            firelight: handle,
+        };
     }
 }
 
@@ -47,7 +53,7 @@ struct ServerArgs {
     #[clap(short, long)]
     daemon_socket: String,
 
-    #[clap(short, long, default_value="localhost:1313")]
+    #[clap(short, long, default_value = "localhost:1313")]
     bind: String,
 
     #[clap(short, long)]

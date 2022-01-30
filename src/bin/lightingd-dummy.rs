@@ -1,15 +1,15 @@
-use std::path::Path;
 use std::os::unix::net::UnixListener;
 use std::os::unix::net::UnixStream;
+use std::path::Path;
 use std::thread;
 
 use clap::Parser;
 
-use firelight::daemon::DaemonArgs;
 use firelight::daemon;
+use firelight::daemon::DaemonArgs;
 
 fn handle_client(mut stream: UnixStream) -> anyhow::Result<()> {
-    let mut buffer : [u32; 256] = [0; 256];
+    let mut buffer: [u32; 256] = [0; 256];
     loop {
         let n = daemon::read_input(&mut stream, &mut buffer)?;
         if n == 0 {

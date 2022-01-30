@@ -49,12 +49,21 @@ impl DeviceController {
             .build()
             .map_err(|_e| anyhow!("failed to open device"))?;
 
-        return Ok(DeviceController { hw: handler, channel: rpi_channel});
+        return Ok(DeviceController {
+            hw: handler,
+            channel: rpi_channel,
+        });
     }
 
     pub fn apply(&mut self, led_colors: &[u32]) {
         let bound = led_colors.len();
-        for (i, led) in self.hw.channel_mut(self.channel).leds_mut().iter_mut().enumerate() {
+        for (i, led) in self
+            .hw
+            .channel_mut(self.channel)
+            .leds_mut()
+            .iter_mut()
+            .enumerate()
+        {
             if i >= bound {
                 break;
             }

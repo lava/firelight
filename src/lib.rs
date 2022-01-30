@@ -8,8 +8,8 @@
 
 pub mod control_msg;
 pub mod daemon;
+pub mod firelight_api;
 pub mod ledstrip;
 pub mod renderer;
-pub mod firelight_api;
 
 pub use firelight_api::*;

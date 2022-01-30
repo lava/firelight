@@ -5,8 +5,8 @@ use std::sync::mpsc;
 use crate::renderer;
 use std::os::unix::net::UnixStream;
 
-use crate::control_msg::ControlMsg;
 use crate::control_msg::Control;
+use crate::control_msg::ControlMsg;
 
 pub struct Handle {
     thread: Option<std::thread::JoinHandle<()>>,
