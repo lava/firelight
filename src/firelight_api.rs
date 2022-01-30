@@ -3,6 +3,7 @@
 use std::sync::mpsc;
 
 use crate::renderer;
+use std::os::unix::net::UnixStream;
 
 use crate::control_msg::ControlMsg;
 use crate::control_msg::Control;
@@ -18,37 +19,17 @@ pub struct Handle {
 }
 
 impl Handle {
-    pub fn new(rpi_dma: i32, rpi_channel: usize, rpi_pin: i32, strands: Vec<usize>) -> Handle {
+    pub fn new(socket: UnixStream, strands: Vec<usize>) -> Handle {
         let (tx, rx) = mpsc::channel();
         let join_handle = std::thread::spawn(move || {
-            let total = strands.iter().sum();
-            // The `rust-ws2811x` library has a built-in `brightness` parameter,
-            // that's used to scale every color channel by `c = c * (brightness+1) / 256`.
-            // We don't expose that to the user and instead set it to 255 to pass
-            // through the exact rgb values that we put in, letting the user take
-            // care of handling color spaces, brightness etc.
-            let hw_channel = ws281x::channel::new()
-                .pin(rpi_pin)
-                .count(total)
-                .brightness(255)
-                .build()
-                .unwrap();
-
-            // FIXME: move handler/channel creation into
-            // a separate `lightingd` binary.
-            let handler = ws281x::handle::new()
-                .dma(rpi_dma)
-                .channel(rpi_channel, hw_channel)
-                .build()
-                .unwrap();
-
-            let control_data = renderer::ControlThreadData {
+            let thread_data = renderer::RenderThreadData {
                 rx: rx,
-                hw: handler,
+                socket: socket,
                 strands: strands,
                 state: Control::default(),
             };
-            return renderer::light_control_thread(control_data);
+
+            return renderer::render_thread(thread_data);
         });
 
         return Handle {

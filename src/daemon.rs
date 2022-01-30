@@ -1,4 +1,7 @@
 use clap::Parser;
+use anyhow::bail;
+use std::os::unix::net::UnixStream;
+use std::io::Read;
 
 /// Provides a control interface for WS2811 LED Light strips.
 #[derive(Parser, Debug)]
@@ -23,4 +26,19 @@ pub struct DaemonArgs {
     /// How many LEDs the strip contains.
     #[clap(short, long)]
     pub leds_count: usize,
+}
+
+pub fn as_bytes(v: &mut [u32]) -> &mut [u8] {
+    unsafe {
+        let (_prefix, result, _suffix) = v.align_to_mut::<u8>();
+        return result;
+    }
+}
+
+pub fn read_input(mut stream: &UnixStream, buffer: &mut [u32]) -> anyhow::Result<usize> {
+    let n = stream.read(&mut as_bytes(buffer)[..])?;
+    if n%4 != 0{
+        bail!("invalid msg");
+    }
+    return Ok(n);
 }

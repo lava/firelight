@@ -1,6 +1,10 @@
+use std::os::unix::net::UnixStream;
+
+/// A shell for interactive debugging.
 fn main() {
     let strands = vec![39, 31, 38, 20];
-    let mut device = firelight::Handle::new(5, 0, 18, strands);
+    let socket = UnixStream::connect("/tmp/sock").unwrap();
+    let mut device = firelight::Handle::new(socket, strands);
     device.set_brightness(128);
     println!("press enter to toggle light status");
     let mut input = String::new();

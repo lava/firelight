@@ -3,9 +3,10 @@
 extern crate rouille;
 extern crate serde;
 
-use std::env;
 use std::io;
 use std::sync::Mutex;
+use std::os::unix::net::UnixStream;
+use clap::Parser;
 
 use serde::Serialize;
 
@@ -25,29 +26,41 @@ impl StatusResponse {
 
 struct ServerState {
     last_state: Control,
-    firelight: firelight::Handle, // [DEV-ONLY] This should still be replaced by a domain socket
+    firelight: firelight::Handle,
 }
 
 impl ServerState {
-    fn new() -> ServerState {
+    fn new(socket: UnixStream) -> ServerState {
         let strands = vec![39, 31, 38, 20];
-        let handle = firelight::Handle::new(5, 0, 18, strands);
+        // let handle = firelight::Handle::new(5, 0, 18, strands);
+        let handle = firelight::Handle::new(socket, strands);
         return ServerState{last_state: Control::default(), firelight: handle};
     }
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let url = if args.len() > 1 {
-        args[1].as_str()
-    } else {
-        "0.0.0.0:1313"
-    };
-    print!("starting server listening on {}\n", url);
+/// Starts a REST Api and web interface to control
+/// firelight via homeassistant or a browser.
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct ServerArgs {
+    /// Path to the listening socket of the daemon.
+    #[clap(short, long)]
+    daemon_socket: String,
 
-    let server_state = Mutex::new(ServerState::new());
+    #[clap(short, long, default_value="localhost:1313")]
+    bind: String,
 
-    rouille::start_server(url, move |request| {
+    #[clap(short, long)]
+    strands: Vec<u32>,
+}
+
+fn main() -> anyhow::Result<()> {
+    let args = ServerArgs::parse();
+    let uds = UnixStream::connect(args.daemon_socket)?;
+    print!("starting server listening on {}\n", args.bind);
+    let server_state = Mutex::new(ServerState::new(uds));
+
+    rouille::start_server(args.bind, move |request| {
         rouille::log(&request, io::stdout(), || {
             router!(request,
                 (GET) (/) => {
@@ -90,4 +103,5 @@ fn main() {
             )
         })
     });
+    return Ok(());
 }

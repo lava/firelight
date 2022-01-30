@@ -5,6 +5,11 @@ pub struct DeviceController {
     channel: usize,
 }
 
+// Declare the state to be safe to send between threads. (ie., that it does not contain thread_local data)
+// This should be ok since on the C side its just a bunch of regular arrays for the pixel data
+// and the memory offsets are global anyways.
+unsafe impl Send for DeviceController {}
+
 impl DeviceController {
     /// Note that this can currently only run on a supported Raspberry Pi model,
     /// because it needs to know the correct offsets for video core memory and

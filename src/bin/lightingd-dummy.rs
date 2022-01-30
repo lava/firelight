@@ -1,35 +1,21 @@
-use std::io::Read;
 use std::path::Path;
-use std::path::PathBuf;
 use std::os::unix::net::UnixListener;
 use std::os::unix::net::UnixStream;
-use std::sync::Arc;
 use std::thread;
-use anyhow::anyhow;
 
 use clap::Parser;
 
-use firelight::ledstrip::DeviceController;
-use firelight::cmdline_args::DaemonArgs;
-
-struct DaemonState {
-}
-
-fn as_bytes(v: &mut [u32]) -> &mut [u8] {
-    unsafe {
-        let (_prefix, result, _suffix) = v.align_to_mut::<u8>();
-        return result;
-    }
-}
+use firelight::daemon::DaemonArgs;
+use firelight::daemon;
 
 fn handle_client(mut stream: UnixStream) -> anyhow::Result<()> {
     let mut buffer : [u32; 256] = [0; 256];
     loop {
-        let n = stream.read(&mut as_bytes(&mut buffer)[..])?;
-        println!("got {} bytes", n);
-        if n <= 0 {
+        let n = daemon::read_input(&mut stream, &mut buffer)?;
+        if n == 0 {
             break;
         }
+        println!("got {} colors", n);
     }
     return Ok(());
 }

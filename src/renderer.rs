@@ -1,48 +1,46 @@
 // TODO: re-evaluate pub
 
 use std::sync::mpsc;
-
+use std::io::Write;
 use noise::NoiseFn;
 use noise::Perlin;
 
 use std::time::Duration;
+use std::os::unix::net::UnixStream;
 
 use crate::control_msg::ControlMsg;
 use crate::control_msg::Control;
 use crate::control_msg::Effect;
+use crate::daemon;
 
-pub(crate) struct ControlThreadData {
+pub(crate) struct RenderThreadData {
     pub rx: mpsc::Receiver<ControlMsg>,
 
-    pub hw: ws281x::handle::Handle,
+    pub socket: UnixStream,
     pub strands: Vec<usize>,
 
     // the last received control msg
     pub state: Control,
 }
 
-pub(crate) fn light_control_thread(mut data: ControlThreadData) -> () {
+pub(crate) fn render_thread(mut data: RenderThreadData) -> () {
     let mut t = 0.0;
     let delta = 0.01;
     loop {
         t += delta;
-        let off = LedColor::from_u32_rgb(0x0);
         let colors = match data.state.effect {
             Effect::Static => render_static(t, &data.strands),
             Effect::Fire => render_fire(t, &data.strands),
         };
-        for (i, led) in data.hw.channel_mut(0).leds_mut().iter_mut().enumerate() {
-            let mut color = if data.state.on { colors[i] } else { off };
-            if data.state.on {
-                color.naive_scale(data.state.brightness)
-            }
-            *led = color.to_u32_rgb();
+        let mut out = Vec::new();
+        for original_color in colors {
+            let brightness = if data.state.on { data.state.brightness } else { 0 };
+            let mut color = original_color;
+            color.naive_scale(brightness);
+            out.push(color.to_u32_rgb());
         }
 
-        //println!("rendering colors {:?}", colors);
-
-        data.hw.render().unwrap();
-        data.hw.wait().unwrap();
+        let _ = data.socket.write(daemon::as_bytes(&mut out[..]));
 
         // TODO: Use a separate timer thread for a stable clock pulse
         let msg = data.rx.recv_timeout(Duration::from_millis(1000 / 60));
