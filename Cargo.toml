@@ -1,5 +1,8 @@
 [package]
 name = "firelight"
+description = "Drive a ws2811 LED strip in flame pattern"
+authors = ["Benno Evers"]
+license = "AGPL-3.0-only"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,3 +19,9 @@ clap = { version = "3.0.13", features = ["derive"]}
 [lib]
 name = "firelight"
 path = "src/lib.rs"
+
+[package.metadata.deb.systemd-units]
+unit-scripts = "systemd/"
+maintaner-scripts = "debian/"
+enable = false
+start = false
