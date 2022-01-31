@@ -2,7 +2,8 @@
 Description=Daemon for LED strip control via ws2811
 
 [Service]
-ExecStart=/usr/bin/firelight-rest
+ExecStart=/usr/bin/firelight-rest --daemon-socket /var/run/firelight-daemon.sock --bind 0.0.0.0:80
+CapabilityBoundingSet=CAP_NET_ADMIN
 
 [Install]
 WantedBy=multi-user.target
