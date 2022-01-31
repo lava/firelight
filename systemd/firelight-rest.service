@@ -1,0 +1,9 @@
+[Unit]
+Description=Daemon for LED strip control via ws2811
+
+[Service]
+ExecStart=/usr/bin/firelight-rest
+
+[Install]
+WantedBy=multi-user.target
+

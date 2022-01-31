@@ -1,0 +1,12 @@
+[Unit]
+Description=Daemon for LED strip control via ws2811
+
+[Service]
+# Config files are not implemented yet, so the current
+# way to configure this for a local installation is an
+# overrides file containing the environment variables.
+ExecStart=/usr/bin/firelight-daemon --pin=$FIRELIGHT_PIN --dma=$FIRELIGHT_DMA --channel=$FIRELIGHT_CHANNEL --leds-count=$FIRELIGHT_LEDCOUNT --unix-socket=/var/run/firelight-daemon.sock
+
+[Install]
+WantedBy=multi-user.target
+
