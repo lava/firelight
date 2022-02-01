@@ -1,9 +1,10 @@
 [package]
 name = "firelight"
 description = "Drive a ws2811 LED strip in flame pattern"
+readme = "README.md"
 authors = ["Benno Evers"]
 license = "AGPL-3.0-only"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 [dependencies]
@@ -22,7 +23,11 @@ path = "src/lib.rs"
 
 [package.metadata.deb]
 maintainer-scripts = "debian/"
+# We can't use the defaults because we want two service files,
+# so we also have to manually list the binaries.
 assets = [
   ["systemd/firelight-daemon.service", "/lib/systemd/system/firelight-daemon.service", "644"],
-  ["systemd/firelight-rest.service", "/lib/systemd/system/firelight-rest.service", "644"]
+  ["systemd/firelight-rest.service", "/lib/systemd/system/firelight-rest.service", "644"],
+  ["target/release/firelight-rest", "/usr/bin/firelight-rest", "755"],
+  ["target/release/firelight-daemon", "/usr/sbin/firelight-daemon", "755"]
 ]
