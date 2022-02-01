@@ -79,7 +79,7 @@ impl Handle {
         return self.state.brightness;
     }
 
-    /// Destructor, joins the control thread.
+    /// Destructor, joins the render thread.
     pub fn drop(&mut self) {
         let _ = self.tx.send(ControlMsg::Shutdown);
         // This is apparently a standard idiom known as the "option dance" [1]

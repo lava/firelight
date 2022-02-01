@@ -53,9 +53,11 @@ struct ServerArgs {
     #[clap(short, long)]
     daemon_socket: String,
 
+    /// The listen address to bind to.
     #[clap(short, long, default_value = "localhost:1313")]
     bind: String,
 
+    /// The logical arrangement of the strip into vertical strands.
     #[clap(short, long)]
     strands: Vec<u32>,
 }
@@ -70,6 +72,7 @@ fn main() -> anyhow::Result<()> {
         rouille::log(&request, io::stdout(), || {
             router!(request,
                 (GET) (/) => {
+                    // TODO: Make a cool HTML control page.
                     return rouille::Response::redirect_302("/status");
                 },
 
