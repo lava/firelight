@@ -5,12 +5,50 @@ use std::sync::mpsc;
 use crate::renderer;
 use std::os::unix::net::UnixStream;
 
-use crate::control_msg::Control;
-use crate::control_msg::ControlMsg;
+use crate::renderer::RendererMsg;
+
+#[derive(Copy, Clone, Debug)]
+pub enum Effect {
+    Static,
+    Fire,
+}
+
+/// Sent by clients.
+/// Used to control the state of the renderer.
+/// Uses xyY colorspace to set colors.
+//  TODO: This is chosen somewhat arbitrary. Here's a WIP list
+//  of pros and contras of different color spaces:
+//  RGB:
+//   Pro: Allows controlling the exact rgb values
+//  HSL:
+//   Pro: - Maps cleanly to standard color pickers
+//        - Separate brightness channel
+//  xyY:
+//   Pro: - Maps cleanly to homeassistant settings
+#[derive(Copy, Clone, Debug)]
+pub struct Control {
+    pub on: bool,
+    pub effect: Effect,
+    pub brightness: u8,
+    pub color_xy: (f32, f32),
+}
+
+impl Control {
+    // Also the initial state when booting
+    pub fn default() -> Control {
+        return Control {
+            on: false,
+            brightness: 255,
+            effect: Effect::Fire,
+            color_xy: (0.0, 0.0),
+        };
+    }
+}
+
 
 pub struct Handle {
     thread: Option<std::thread::JoinHandle<()>>,
-    tx: mpsc::Sender<ControlMsg>,
+    tx: mpsc::Sender<RendererMsg>,
 
     // Remember the last-sent state so we can offer
     // convenience methods to toggle on/off, adjust
@@ -42,7 +80,7 @@ impl Handle {
     /// Fully set state.
     pub fn control(&mut self, control: Control) {
         self.state = control;
-        let _ = self.tx.send(ControlMsg::External(control));
+        let _ = self.tx.send(RendererMsg::External(control));
     }
 
     // Convenience functions to partially change the state.
@@ -81,7 +119,7 @@ impl Handle {
 
     /// Destructor, joins the render thread.
     pub fn drop(&mut self) {
-        let _ = self.tx.send(ControlMsg::Shutdown);
+        let _ = self.tx.send(RendererMsg::Shutdown);
         // This is apparently a standard idiom known as the "option dance" [1]
         // [1]: https://users.rust-lang.org/t/spawn-threads-and-join-in-destructor/1613/9
         if let Some(handle) = self.thread.take() {
