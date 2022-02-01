@@ -1,3 +1,5 @@
+use std::fs::Permissions;
+use std::os::unix::fs::PermissionsExt;
 use std::ops::DerefMut;
 use std::os::unix::net::UnixListener;
 use std::os::unix::net::UnixStream;
@@ -37,12 +39,10 @@ fn handle_client(
     return Ok(());
 }
 
-/// A debug version of lightingd that only prints the color pattern it would apply.
-/// TODO: Open a window and draw results.
 fn main() -> anyhow::Result<()> {
     let args = DaemonArgs::parse();
     // It would be cleaner to delete this on shutdown using RAII,
-    // but rust doesn't unwind after signals.
+    // but rust doesn't unwind after signals so that cannot work.
     if Path::new(&args.unix_socket).exists() {
         std::fs::remove_file(&args.unix_socket)?;
     }
@@ -55,6 +55,7 @@ fn main() -> anyhow::Result<()> {
     let state = DaemonState { hw: handle };
     let shared_state = Arc::new(Mutex::new(state));
     let listener = UnixListener::bind(&args.unix_socket)?;
+    std::fs::set_permissions(&args.unix_socket, Permissions::from_mode(0o666))?;
     println!("listening on {}", args.unix_socket);
     for stream in listener.incoming() {
         match stream {
