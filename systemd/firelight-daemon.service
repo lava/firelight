@@ -4,7 +4,8 @@ Description=Daemon for LED strip control via ws2811
 [Service]
 # Config files are not implemented yet, so the current
 # way to configure this for a local installation is an
-# overrides file containing the environment variables.
+# overrides file via `systemctl edit firelight-daemon`
+# containing the environment variables.
 Environment=FIRELIGHT_PIN=
 Environment=FIRELIGHT_DMA=
 Environment=FIRELIGHT_CHANNEL=

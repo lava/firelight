@@ -4,7 +4,8 @@ Requires=firelight-daemon
 
 [Service]
 User=firelight
-ExecStart=/usr/bin/firelight-rest --daemon-socket /var/run/firelight-daemon.sock --bind 0.0.0.0:80
+Environment=FIRELIGHT_STRANDS=
+ExecStart=/usr/bin/firelight-rest --daemon-socket /var/run/firelight-daemon.sock --bind 0.0.0.0:80 --strands=${FIRELIGHT_STRANDS}
 CapabilityBoundingSet=CAP_NET_ADMIN
 
 [Install]

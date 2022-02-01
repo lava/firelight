@@ -14,13 +14,13 @@ use crate::daemon;
 
 
 // TODO: re-evaluate publicness when introducing daemon
-pub(crate) enum RendererMsg {
+pub(crate) enum RendererCommand {
     Shutdown,
     ControlMsg(Control),
 }
 
 pub(crate) struct RenderThreadData {
-    pub rx: mpsc::Receiver<RendererMsg>,
+    pub rx: mpsc::Receiver<RendererCommand>,
 
     pub socket: UnixStream,
     pub strands: Vec<usize>,
@@ -55,8 +55,8 @@ pub(crate) fn render_thread(mut data: RenderThreadData) -> () {
         // TODO: Use a separate timer thread for a stable clock pulse
         let msg = data.rx.recv_timeout(Duration::from_millis(1000 / 60));
         match msg {
-            Ok(RendererMsg::Shutdown) => break,
-            Ok(RendererMsg::ControlMsg(control)) => data.state = control,
+            Ok(RendererCommand::Shutdown) => break,
+            Ok(RendererCommand::ControlMsg(control)) => data.state = control,
             Err(_) => continue,
         }
     }

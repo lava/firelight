@@ -5,7 +5,7 @@ use std::sync::mpsc;
 use crate::renderer;
 use std::os::unix::net::UnixStream;
 
-use crate::renderer::RendererMsg;
+use crate::renderer::RendererCommand;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Effect {
@@ -48,7 +48,7 @@ impl Control {
 
 pub struct Handle {
     thread: Option<std::thread::JoinHandle<()>>,
-    tx: mpsc::Sender<RendererMsg>,
+    tx: mpsc::Sender<RendererCommand>,
 
     // Remember the last-sent state so we can offer
     // convenience methods to toggle on/off, adjust
@@ -80,7 +80,7 @@ impl Handle {
     /// Fully set state.
     pub fn control(&mut self, control: Control) {
         self.state = control;
-        let _ = self.tx.send(RendererMsg::External(control));
+        let _ = self.tx.send(RendererCommand::ControlMsg(control));
     }
 
     // Convenience functions to partially change the state.
@@ -119,7 +119,7 @@ impl Handle {
 
     /// Destructor, joins the render thread.
     pub fn drop(&mut self) {
-        let _ = self.tx.send(RendererMsg::Shutdown);
+        let _ = self.tx.send(RendererCommand::Shutdown);
         // This is apparently a standard idiom known as the "option dance" [1]
         // [1]: https://users.rust-lang.org/t/spawn-threads-and-join-in-destructor/1613/9
         if let Some(handle) = self.thread.take() {

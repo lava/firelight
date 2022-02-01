@@ -6,7 +6,6 @@
 // Implementing Binary:                     lightingd                    firelight (lib)       firelight-rest         homeassistant
 //                                                                                             firelight-shell        actual human
 
-pub mod control_msg;
 pub mod daemon;
 pub mod firelight_api;
 pub mod ledstrip;

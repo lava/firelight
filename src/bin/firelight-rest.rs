@@ -10,7 +10,7 @@ use std::sync::Mutex;
 
 use serde::Serialize;
 
-use firelight::control_msg::Control;
+use firelight::Control;
 
 #[derive(Serialize, Debug)]
 struct StatusResponse {
@@ -33,9 +33,8 @@ struct ServerState {
 }
 
 impl ServerState {
-    fn new(socket: UnixStream) -> ServerState {
-        let strands = vec![39, 31, 38, 20];
-        // let handle = firelight::Handle::new(5, 0, 18, strands);
+    fn new(socket: UnixStream, strands: Vec<u32>) -> ServerState {
+        // let strands = vec![39, 31, 38, 20];
         let handle = firelight::Handle::new(socket, strands);
         return ServerState {
             last_state: Control::default(),
@@ -66,7 +65,7 @@ fn main() -> anyhow::Result<()> {
     let args = ServerArgs::parse();
     let uds = UnixStream::connect(args.daemon_socket)?;
     print!("starting server listening on {}\n", args.bind);
-    let server_state = Mutex::new(ServerState::new(uds));
+    let server_state = Mutex::new(ServerState::new(uds, args.strands));
 
     rouille::start_server(args.bind, move |request| {
         rouille::log(&request, io::stdout(), || {
@@ -85,11 +84,13 @@ fn main() -> anyhow::Result<()> {
                     let input = try_or_400!(post_input!(request, {
                         on: String,
                         brightness: Option<u8>,
-                        color_rgb: Option<String>,
-                        transition: Option<i32>,
+                        color_hs: Option<(i32, i32)>,  // h in [0,360], s in [0, 100]
+                        color_xy: Option<(f32, f32)>,  // both args in [0,1]
+                        color_rgb: Option<(u8,u8,u8)>, // all args in [0,255]
+                        effect: Option<String>,
                     }));
                     println!("got '/control' input {:?}", input);
-                    let mut control = firelight::control_msg::Control::default();
+                    let mut control = firelight::Control::default();
                     if input.on == "True" {
                         control.on = true;
                     } else if input.on == "False" {
