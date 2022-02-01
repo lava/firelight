@@ -33,7 +33,7 @@ struct ServerState {
 }
 
 impl ServerState {
-    fn new(socket: UnixStream, strands: Vec<u32>) -> ServerState {
+    fn new(socket: UnixStream, strands: Vec<usize>) -> ServerState {
         // let strands = vec![39, 31, 38, 20];
         let handle = firelight::Handle::new(socket, strands);
         return ServerState {
@@ -58,7 +58,7 @@ struct ServerArgs {
 
     /// The logical arrangement of the strip into vertical strands.
     #[clap(short, long)]
-    strands: Vec<u32>,
+    strands: Vec<usize>,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -81,12 +81,14 @@ fn main() -> anyhow::Result<()> {
                 },
 
                 (POST) (/control) => {
+                    let text = try_or_400!(rouille::input::plain_text_body(&request));
+                    println!("raw body: {}", text);
                     let input = try_or_400!(post_input!(request, {
                         on: String,
                         brightness: Option<u8>,
-                        color_hs: Option<(i32, i32)>,  // h in [0,360], s in [0, 100]
-                        color_xy: Option<(f32, f32)>,  // both args in [0,1]
-                        color_rgb: Option<(u8,u8,u8)>, // all args in [0,255]
+                        color_hs: Option<String>,  // h in [0,360], s in [0, 100]
+                        color_xy: Option<String>,  // both args in [0,1]
+                        color_rgb: Option<Vec<u8>>, // all args in [0,255]
                         effect: Option<String>,
                     }));
                     println!("got '/control' input {:?}", input);
