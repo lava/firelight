@@ -1,5 +1,6 @@
 [Unit]
 Description=Daemon for LED strip control via ws2811
+Requires=firelight-daemon
 
 [Service]
 User=firelight
