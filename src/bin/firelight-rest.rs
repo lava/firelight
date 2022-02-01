@@ -83,16 +83,18 @@ fn main() -> anyhow::Result<()> {
                 },
 
                 (POST) (/control) => {
-                    let text = try_or_400!(rouille::input::plain_text_body(&request));
-                    println!("raw body: {}", text);
-                    let input = try_or_400!(post_input!(request, {
+                    let maybe_input = post_input!(request, {
                         on: String,
                         brightness: Option<u8>,
                         color_hs: Option<String>,  // h in [0,360], s in [0, 100]
                         color_xy: Option<String>,  // both args in [0,1]
                         color_rgb: Option<Vec<u8>>, // all args in [0,255]
                         effect: Option<String>,
-                    }));
+                    });
+                    let input = match maybe_input {
+                        Ok(v) => v,
+                        Err(e) => {println!("error {:?}", e); return rouille::Response::empty_404(); }
+                    };
                     println!("got '/control' input {:?}", input);
                     let mut control = firelight::Control::default();
                     if input.on == "True" {
