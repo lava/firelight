@@ -13,6 +13,15 @@ pub enum Effect {
     Fire,
 }
 
+impl Effect {
+    pub fn to_string(&self) -> String {
+        return match self {
+            Effect::Static => "static".to_string(),
+            Effect::Fire => "fire".to_string(),
+        };
+    }
+}
+
 /// Sent by clients.
 /// Used to control the state of the renderer.
 /// Uses xyY colorspace to set colors.

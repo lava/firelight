@@ -16,6 +16,7 @@ use firelight::Control;
 struct StatusResponse {
     on: bool,
     brightness: u8,
+    effect: String,
 }
 
 impl StatusResponse {
@@ -23,6 +24,7 @@ impl StatusResponse {
         return StatusResponse {
             on: control.on,
             brightness: control.brightness,
+            effect: control.effect.to_string(),
         };
     }
 }
