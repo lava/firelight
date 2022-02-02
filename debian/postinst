@@ -4,3 +4,4 @@ set -e
 
 adduser --quiet --system --no-create-home firelight
 systemctl daemon-reload
+systemctl start firelight-daemon firelight-rest
