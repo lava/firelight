@@ -17,6 +17,7 @@ struct StatusResponse {
     on: bool,
     brightness: u8,
     effect: String,
+    color_hs: (f32, f32),
 }
 
 impl StatusResponse {
@@ -25,6 +26,7 @@ impl StatusResponse {
             on: control.on,
             brightness: control.brightness,
             effect: control.effect.to_string(),
+            color_hs: (0.0, 0.0),
         };
     }
 }
@@ -86,17 +88,19 @@ fn main() -> anyhow::Result<()> {
                     let maybe_input = post_input!(request, {
                         on: String,
                         brightness: Option<u8>,
-                        color_hs: Option<String>,  // h in [0,360], s in [0, 100]
-                        color_xy: Option<String>,  // both args in [0,1]
-                        color_rgb: Option<Vec<u8>>, // all args in [0,255]
+                        color_hs: Vec<f32>,  // h in [0.0,360.0], s in [0.0, 100.0]
+                        color_xy: Vec<f32>,  // both args in [0.0,1.0] (untested)
+                        color_rgb: Vec<u8>, // all args in [0,255]
                         effect: Option<String>,
                     });
                     let input = match maybe_input {
                         Ok(v) => v,
-                        Err(e) => {println!("error {:?}", e); return rouille::Response::empty_404(); }
+                        Err(e) => {println!("error {:?}", e); return rouille::Response::empty_400(); }
                     };
                     println!("got '/control' input {:?}", input);
-                    let mut control = firelight::Control::default();
+                    {
+                        let mut state = try_or_400!(server_state.lock());
+                    let mut control = state;
                     if input.on == "True" {
                         control.on = true;
                     } else if input.on == "False" {
@@ -107,8 +111,13 @@ fn main() -> anyhow::Result<()> {
                     if let Some(brightness) = input.brightness {
                         control.brightness = brightness;
                     }
-                    {
-                        let mut state = try_or_400!(server_state.lock());
+                    if let Some(effect) = input.effect {
+                        control.effect = effect;
+                    }
+                    if !input.color_hs.is_empty() {
+                        // TODO: check len() == 2
+                        control.color_hs = (input.color_hs[0], input.color_hs[1]);
+                    }
                         state.last_state = control;
                         state.firelight.control(control);
                     }

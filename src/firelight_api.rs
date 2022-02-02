@@ -24,7 +24,6 @@ impl Effect {
 
 /// Sent by clients.
 /// Used to control the state of the renderer.
-/// Uses xyY colorspace to set colors.
 //  TODO: This is chosen somewhat arbitrary. Here's a WIP list
 //  of pros and contras of different color spaces:
 //  RGB:
@@ -39,7 +38,7 @@ pub struct Control {
     pub on: bool,
     pub effect: Effect,
     pub brightness: u8,
-    pub color_xy: (f32, f32),
+    pub color_hs: (f32, f32),
 }
 
 impl Control {

@@ -34,9 +34,10 @@ pub(crate) fn render_thread(mut data: RenderThreadData) -> () {
     let delta = 0.01;
     loop {
         t += delta;
+        let color = palette::Hsl::new(data.state.color_hs[0], data.state.color_hs[1], data.state.brightness / 255.);
         let colors = match data.state.effect {
-            Effect::Static => render_static(t, &data.strands),
-            Effect::Fire => render_fire(t, &data.strands),
+            Effect::Static => render_static(t, data.state.color_hs, &data.strands),
+            Effect::Fire => render_fire(t, data.state.color_hs, &data.strands),
         };
         let mut out = Vec::new();
         for original_color in colors {
@@ -95,7 +96,7 @@ impl LedColor {
     }
 }
 
-fn render_fire(t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
+fn render_fire(t: f64, color_hs: (f32, f32), strands: &Vec<usize>) -> Vec<LedColor> {
     let perlin = Perlin::default();
     let mut noise = Vec::new();
     for (i, _) in strands.iter().enumerate() {
@@ -118,7 +119,7 @@ fn render_fire(t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
     return result;
 }
 
-fn render_static(_t: f64, strands: &Vec<usize>) -> Vec<LedColor> {
+fn render_static(_t: f64, color_hs: (f32, f32), strands: &Vec<usize>) -> Vec<LedColor> {
     // let mut cumsum = Vec::new();
     // for strand in &strands {
     //     let prev = cumsum.last().copied().unwrap_or(0);
