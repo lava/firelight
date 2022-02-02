@@ -20,6 +20,7 @@ macro_rules! skip_fail {
 /// A shell for interactive debugging.
 fn main() -> anyhow::Result<()> {
     let args = ServerArgs::parse();
+    println!("{:?}", args.strands);
     let socket = UnixStream::connect(args.daemon_socket)?;
     let mut device = firelight::Handle::new(socket, args.strands);
     let mut input = String::new();

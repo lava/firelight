@@ -1,10 +1,10 @@
 // High-level overview:
 //
-// Protocol:                       ws2811                 domain socket              Control                 ???
-// Library Concept:      hardware <--------> controller  <---------------> renderer <------------> client <------------> user
+// Protocol:                       ws2811                 domain socket              Control                    ???
+// Library Concept:      hardware <--------> controller  <---------------> renderer <------------> server <------------> user
 //
-// Implementing Binary:                     lightingd                    firelight (lib)       firelight-rest         homeassistant
-//                                                                                             firelight-shell        actual human
+// Implementing Binary:                    firelight-daemon                 (lib)              firelight-rest         homeassistant
+//                                                                                             debug-shell            actual human
 
 pub mod daemon;
 pub mod firelight_api;

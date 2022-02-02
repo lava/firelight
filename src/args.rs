@@ -39,7 +39,7 @@ pub struct ServerArgs {
     pub bind: String,
 
     /// The logical arrangement of the strip into vertical strands.
-    #[clap(short, long)]
+    #[clap(short, long, multiple_occurrences = false, multiple_values = true, use_delimiter= true)]
     pub strands: Vec<usize>,
 }
 
