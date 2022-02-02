@@ -100,24 +100,30 @@ fn main() -> anyhow::Result<()> {
                     println!("got '/control' input {:?}", input);
                     {
                         let mut state = try_or_400!(server_state.lock());
-                    let mut control = state;
-                    if input.on == "True" {
-                        control.on = true;
-                    } else if input.on == "False" {
-                        control.on = false;
-                    } else {
-                        return rouille::Response::text("invalid value for 'on'").with_status_code(400);
-                    }
-                    if let Some(brightness) = input.brightness {
-                        control.brightness = brightness;
-                    }
-                    if let Some(effect) = input.effect {
-                        control.effect = effect;
-                    }
-                    if !input.color_hs.is_empty() {
-                        // TODO: check len() == 2
-                        control.color_hs = (input.color_hs[0], input.color_hs[1]);
-                    }
+                        let mut control = state.last_state;
+                        if input.on == "True" {
+                            control.on = true;
+                        } else if input.on == "False" {
+                            control.on = false;
+                        } else {
+                            return rouille::Response::text("invalid value for 'on'").with_status_code(400);
+                        }
+                        if let Some(brightness) = input.brightness {
+                            control.brightness = brightness;
+                        }
+                        if let Some(effect) = input.effect {
+                            let maybe_effect = firelight::Effect::from_string(&effect);
+                            match maybe_effect {
+                                Ok(effect) => control.effect = effect,
+                                Err(_) => return rouille::Response::empty_400(),
+                            }
+                        }
+                        if !input.color_hs.is_empty() {
+                            if input.color_hs.len() != 2 {
+                                return rouille::Response::empty_400();
+                            }
+                            control.color_hs = (input.color_hs[0], input.color_hs[1]);
+                        }
                         state.last_state = control;
                         state.firelight.control(control);
                     }

@@ -8,6 +8,9 @@ use std::sync::mpsc;
 use std::os::unix::net::UnixStream;
 use std::time::Duration;
 
+use palette::FromColor;
+use palette::Pixel;
+
 use crate::firelight_api::Control;
 use crate::firelight_api::Effect;
 use crate::daemon;
@@ -34,23 +37,21 @@ pub(crate) fn render_thread(mut data: RenderThreadData) -> () {
     let delta = 0.01;
     loop {
         t += delta;
-        let color = palette::Hsl::new(data.state.color_hs[0], data.state.color_hs[1], data.state.brightness / 255.);
+        let color_hsl = palette::Hsl::new(data.state.color_hs.0, data.state.color_hs.1, data.state.brightness as f32 / 255.);
+        let color_rgb = palette::Srgb::from_color(color_hsl);
         let colors = match data.state.effect {
-            Effect::Static => render_static(t, data.state.color_hs, &data.strands),
-            Effect::Fire => render_fire(t, data.state.color_hs, &data.strands),
+            Effect::Static => render_static(t, color_rgb, &data.strands),
+            Effect::Fire => render_fire(t, color_rgb, &data.strands),
         };
         let mut out = Vec::new();
         for original_color in colors {
-            let brightness = if data.state.on {
-                data.state.brightness
+            let color = if data.state.on {
+                original_color.to_u32_rgb()
             } else {
                 0
             };
-            let mut color = original_color;
-            color.naive_scale(brightness);
-            out.push(color.to_u32_rgb());
+            out.push(color);
         }
-
         let _ = data.socket.write(daemon::as_bytes(&mut out[..]));
 
         // TODO: Use a separate timer thread for a stable clock pulse
@@ -81,22 +82,21 @@ impl LedColor {
         };
     }
 
+    fn from_u8_rgb(x: [u8; 3]) -> LedColor {
+        return LedColor {
+            data: x,
+        }
+    }
+
     // Render as 0x00RRGGBB.
     fn to_u32_rgb(&self) -> u32 {
         return ((self.data[0] as u32) << 16)
             | ((self.data[1] as u32) << 8)
             | (self.data[0] as u32);
     }
-
-    fn naive_scale(&mut self, scale: u8) {
-        let scale32 = scale as u32;
-        self.data[0] = (self.data[0] as u32 * (scale32 + 1) / 256) as u8;
-        self.data[1] = (self.data[1] as u32 * (scale32 + 1) / 256) as u8;
-        self.data[2] = (self.data[1] as u32 * (scale32 + 1) / 256) as u8;
-    }
 }
 
-fn render_fire(t: f64, color_hs: (f32, f32), strands: &Vec<usize>) -> Vec<LedColor> {
+fn render_fire(t: f64, color_rgb: palette::Srgb, strands: &Vec<usize>) -> Vec<LedColor> {
     let perlin = Perlin::default();
     let mut noise = Vec::new();
     for (i, _) in strands.iter().enumerate() {
@@ -113,19 +113,20 @@ fn render_fire(t: f64, color_hs: (f32, f32), strands: &Vec<usize>) -> Vec<LedCol
             result.push(LedColor::from_u32_rgb(0x0));
         }
         for _ in num..*strand {
-            result.push(LedColor::from_u32_rgb(0xffffff));
+            let rgb : [u8; 3] = color_rgb.into_format().into_raw();
+            result.push(LedColor::from_u8_rgb(rgb));
         }
     }
     return result;
 }
 
-fn render_static(_t: f64, color_hs: (f32, f32), strands: &Vec<usize>) -> Vec<LedColor> {
+fn render_static(_t: f64, color: palette::Srgb, strands: &Vec<usize>) -> Vec<LedColor> {
     // let mut cumsum = Vec::new();
     // for strand in &strands {
     //     let prev = cumsum.last().copied().unwrap_or(0);
     //     cumsum.push(prev + strand);
     // }
-    let on = LedColor::from_u32_rgb(0xffffff);
+    let on = LedColor::from_u8_rgb(color.into_format().into_raw());
     let mut result = Vec::new();
     for strand in strands {
         for _ in 0..*strand {

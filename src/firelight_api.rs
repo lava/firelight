@@ -2,6 +2,7 @@
 
 use std::sync::mpsc;
 
+use anyhow::anyhow;
 use crate::renderer;
 use std::os::unix::net::UnixStream;
 
@@ -19,6 +20,14 @@ impl Effect {
             Effect::Static => "static".to_string(),
             Effect::Fire => "fire".to_string(),
         };
+    }
+
+    pub fn from_string(s: &str) -> anyhow::Result<Effect> {
+        return match s {
+            "static" => Ok(Effect::Static),
+            "fire" => Ok(Effect::Fire),
+            _ => Err(anyhow!("invalid effect {}", s)),
+        }
     }
 }
 
@@ -46,9 +55,9 @@ impl Control {
     pub fn default() -> Control {
         return Control {
             on: false,
-            brightness: 255,
             effect: Effect::Fire,
-            color_xy: (0.0, 0.0),
+            brightness: 255,
+            color_hs: (0.0, 0.0),
         };
     }
 }
