@@ -6,7 +6,7 @@ use std::thread;
 use clap::Parser;
 
 use firelight::daemon;
-use firelight::daemon::DaemonArgs;
+use firelight::args::DaemonArgs;
 
 fn handle_client(mut stream: UnixStream) -> anyhow::Result<()> {
     let mut buffer: [u32; 256] = [0; 256];

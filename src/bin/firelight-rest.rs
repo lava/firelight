@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 
 use firelight::Control;
+use firelight::args::ServerArgs;
 
 #[derive(Serialize, Debug)]
 struct StatusResponse {
@@ -47,24 +48,6 @@ impl ServerState {
     }
 }
 
-/// Starts a REST Api and web interface to control
-/// firelight via homeassistant or a browser.
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct ServerArgs {
-    /// Path to the listening socket of the daemon.
-    #[clap(short, long)]
-    daemon_socket: String,
-
-    /// The listen address to bind to.
-    #[clap(short, long, default_value = "localhost:1313")]
-    bind: String,
-
-    /// The logical arrangement of the strip into vertical strands.
-    #[clap(short, long)]
-    strands: Vec<usize>,
-}
-
 fn main() -> anyhow::Result<()> {
     let args = ServerArgs::parse();
     let uds = UnixStream::connect(args.daemon_socket)?;
@@ -90,7 +73,7 @@ fn main() -> anyhow::Result<()> {
                         brightness: Option<u8>,
                         color_hs: Vec<f32>,  // h in [0.0,360.0], s in [0.0, 100.0]
                         color_xy: Vec<f32>,  // both args in [0.0,1.0] (untested)
-                        color_rgb: Vec<u8>, // all args in [0,255]
+                        color_rgb: Vec<u8>, // all args in [0,255] (untested)
                         effect: Option<String>,
                     });
                     let input = match maybe_input {

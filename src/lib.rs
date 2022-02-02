@@ -10,5 +10,6 @@ pub mod daemon;
 pub mod firelight_api;
 pub mod ledstrip;
 pub mod renderer;
+pub mod args;
 
 pub use firelight_api::*;

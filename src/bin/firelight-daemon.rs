@@ -11,7 +11,7 @@ use clap::Parser;
 use std::sync::Mutex;
 
 use firelight::daemon;
-use firelight::daemon::DaemonArgs;
+use firelight::args::DaemonArgs;
 use firelight::ledstrip::DeviceController;
 
 struct DaemonState {
