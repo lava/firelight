@@ -27,7 +27,7 @@ impl StatusResponse {
             on: control.on,
             brightness: control.brightness,
             effect: control.effect.to_string(),
-            color_hs: (0.0, 0.0),
+            color_hs: control.color_hs,
         };
     }
 }
@@ -39,7 +39,6 @@ struct ServerState {
 
 impl ServerState {
     fn new(socket: UnixStream, strands: Vec<usize>) -> ServerState {
-        // let strands = vec![39, 31, 38, 20];
         let handle = firelight::Handle::new(socket, strands);
         return ServerState {
             last_state: Control::default(),
@@ -73,7 +72,7 @@ fn main() -> anyhow::Result<()> {
                         brightness: Option<u8>,
                         color_hs: Vec<f32>,  // h in [0.0,360.0], s in [0.0, 100.0]
                         color_xy: Vec<f32>,  // both args in [0.0,1.0] (untested)
-                        color_rgb: Vec<u8>, // all args in [0,255] (untested)
+                        color_rgb: Vec<u8>,  // all args in [0,255] (untested)
                         effect: Option<String>,
                     });
                     let input = match maybe_input {
@@ -95,6 +94,7 @@ fn main() -> anyhow::Result<()> {
                             control.brightness = brightness;
                         }
                         if let Some(effect) = input.effect {
+                            println!("got effect {}");
                             let maybe_effect = firelight::Effect::from_string(&effect);
                             match maybe_effect {
                                 Ok(effect) => control.effect = effect,
