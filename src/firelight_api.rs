@@ -55,7 +55,7 @@ impl Control {
     pub fn default() -> Control {
         return Control {
             on: false,
-            effect: Effect::Fire,
+            effect: Effect::Static,
             brightness: 255,
             color_hs: (0.0, 0.0),
         };

@@ -26,6 +26,9 @@ fn handle_client(
     loop {
         let n = daemon::read_input(&mut stream, &mut buffer)?;
         println!("got {} colors", n);
+        if n == 0 {
+            break;
+        }
         let maybe_state = state_mutex.lock();
         match maybe_state {
             Ok(mut state) => state.deref_mut().hw.apply(&buffer[0..n]),
@@ -34,7 +37,7 @@ fn handle_client(
                 break;
             }
         }
-        //
+        
     }
     return Ok(());
 }
