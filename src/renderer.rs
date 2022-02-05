@@ -60,8 +60,8 @@ pub(crate) fn render_thread(mut data: RenderThreadData) -> () {
             Ok(RendererCommand::Shutdown) => break,
             Ok(RendererCommand::ControlMsg(control)) => {
                 data.state = control;
-                let color_hsl = palette::Hsl::new(data.state.color_hs.0, data.state.color_hs.1 / 100., data.state.brightness as f32 / 255.);
-                println!("color: {:?}/{}/{}", color_hsl.hue, color_hsl.saturation, color_hsl.lightness);
+                let color_hsl = palette::Hsv::new(data.state.color_hs.0, data.state.color_hs.1 / 100., data.state.brightness as f32 / 255.);
+                println!("color: {:?}/{}/{}", color_hsl.hue, color_hsl.saturation, color_hsl.value);
                 let color_rgb = palette::Srgb::from_color(color_hsl);
                 println!("color: {}/{}/{}", color_rgb.red, color_rgb.green, color_rgb.blue);
                 let rgb : [u8; 3] = color_rgb.into_format().into_raw();
@@ -90,6 +90,7 @@ impl LedColor {
         };
     }
 
+    // Initialize from an u8 array [0xRR, 0xGG, 0xBB]
     fn from_u8_rgb(x: [u8; 3]) -> LedColor {
         return LedColor {
             data: x,
@@ -100,7 +101,7 @@ impl LedColor {
     fn to_u32_rgb(&self) -> u32 {
         return ((self.data[0] as u32) << 16)
             | ((self.data[1] as u32) << 8)
-            | (self.data[0] as u32);
+            | (self.data[2] as u32);
     }
 }
 
