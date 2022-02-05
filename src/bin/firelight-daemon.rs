@@ -25,7 +25,6 @@ fn handle_client(
     let mut buffer: [u32; 256] = [0; 256];
     loop {
         let n = daemon::read_input(&mut stream, &mut buffer)?;
-        println!("got {} colors", n);
         if n == 0 {
             break;
         }

@@ -94,7 +94,7 @@ fn main() -> anyhow::Result<()> {
                             control.brightness = brightness;
                         }
                         if let Some(effect) = input.effect {
-                            println!("got effect {}");
+                            println!("got effect {}", effect);
                             let maybe_effect = firelight::Effect::from_string(&effect);
                             match maybe_effect {
                                 Ok(effect) => control.effect = effect,
