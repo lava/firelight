@@ -37,6 +37,7 @@ impl DeviceController {
         // through the exact rgb values that we put in, letting the outside take
         // care of handling color spaces, brightness etc.
         let hw_channel = ws281x::channel::new()
+            .strip(ws281x::strip::Strip::RGB)
             .pin(rpi_pin)
             .count(leds_count)
             .brightness(255)
