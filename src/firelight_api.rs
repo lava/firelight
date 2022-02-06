@@ -33,15 +33,6 @@ impl Effect {
 
 /// Sent by clients.
 /// Used to control the state of the renderer.
-//  TODO: This is chosen somewhat arbitrary. Here's a WIP list
-//  of pros and contras of different color spaces:
-//  RGB:
-//   Pro: Allows controlling the exact rgb values
-//  HSL:
-//   Pro: - Maps cleanly to standard color pickers
-//        - Separate brightness channel
-//  xyY:
-//   Pro: - Maps cleanly to homeassistant settings
 #[derive(Copy, Clone, Debug)]
 pub struct Control {
     pub on: bool,
@@ -130,8 +121,20 @@ impl Handle {
 
     // Getters for the current state.
 
+    pub fn is_on(&self) -> bool {
+        return self.state.on;
+    }
+
     pub fn brightness(&self) -> u8 {
         return self.state.brightness;
+    }
+
+    pub fn color_hs(&self) -> (f32, f32) {
+        return self.state.color_hs;
+    }
+
+    pub fn effect(&self) -> Effect {
+        return self.state.effect;
     }
 
     /// Destructor, joins the render thread.

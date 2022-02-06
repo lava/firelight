@@ -15,14 +15,21 @@ This crate contains two binaries:
     to query the current renderer state in JSON format and a `/control` endpoint to
     set it in the same format.
 
-The daemon is generic enough that it should be possible to use it in other
-applications without modification. However, it can currently only run on
-a Raspberry PI because it needs to know the model-specific memory offset
-of the video core memory and the DMA controller.
+Or, in a graphical
 
-The server is a bit more specialized and internally spawns a rendering thread
-that continually renders the RGB light values according to the current state
-and sends them to the daemon.
+               ws2811                 domain socket              Control                    ???
+    hardware <--------> controller  <---------------> renderer <------------> server <------------> user
+    
+                    firelight-daemon                   (lib)              firelight-rest      (e.g.) homeassistant
+    
+
+The daemon can only run on a Raspberry PI because it needs to know the
+model-specific memory offset of the video core memory and the DMA controller.
+
+The server internally spawns a rendering thread that continually renders
+the RGB light values according to the current state and sends them to
+the daemon. The `debug-shell` binary can be used to just run the renderer
+without a web server.
 
 Currently, two effect modes are supported by the renderer: A `static` mode
 that displays a constant color, and a `fire` mode that renders a roughly

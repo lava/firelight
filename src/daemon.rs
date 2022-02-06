@@ -9,7 +9,7 @@ pub fn as_bytes(v: &mut [u32]) -> &mut [u8] {
     }
 }
 
-/// Returns number of u32's that were read from the stream.
+/// Returns the number of u32's that were read from the stream.
 pub fn read_input(mut stream: &UnixStream, buffer: &mut [u32]) -> anyhow::Result<usize> {
     let n = stream.read(&mut as_bytes(buffer)[..])?;
     if n % 4 != 0 {

@@ -37,7 +37,10 @@ impl DeviceController {
         // through the exact rgb values that we put in, letting the outside take
         // care of handling color spaces, brightness etc.
         let hw_channel = ws281x::channel::new()
-            .strip(ws281x::strip::Strip::RGB)
+            // The channel always expects its input in 0xWWRRGGBB format. This gives
+            // the byte order in which the color needs to be passed to the LED strip.
+            // TODO: This should be configurable.
+            .strip(ws281x::strip::Strip::GRB)
             .pin(rpi_pin)
             .count(leds_count)
             .brightness(255)
