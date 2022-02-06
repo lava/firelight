@@ -38,6 +38,10 @@ pub struct ServerArgs {
     #[clap(short, long, default_value = "localhost:1313")]
     pub bind: String,
 
+    /// A unique identifier for this server instance.
+    #[clap(short, long, default_value="firelight-lamp")]
+    pub instance_name: String,
+
     /// The logical arrangement of the strip into vertical strands.
     #[clap(short, long, multiple_occurrences = false, multiple_values = true, use_delimiter= true)]
     pub strands: Vec<usize>,

@@ -13,12 +13,19 @@ use serde::Serialize;
 use firelight::Control;
 use firelight::args::ServerArgs;
 
+
 #[derive(Serialize, Debug)]
 struct StatusResponse {
     on: bool,
     brightness: u8,
     effect: String,
     color_hs: (f32, f32),
+}
+
+#[derive(Serialize, Debug)]
+struct AboutResponse {
+    version: String,
+    instance_name: String,
 }
 
 impl StatusResponse {
@@ -48,6 +55,7 @@ impl ServerState {
 }
 
 fn main() -> anyhow::Result<()> {
+    let firelight_version: &str = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
     let args = ServerArgs::parse();
     let uds = UnixStream::connect(args.daemon_socket)?;
     print!("starting server listening on {}\n", args.bind);
@@ -66,13 +74,19 @@ fn main() -> anyhow::Result<()> {
                     return rouille::Response::json(&StatusResponse::from_control(state.last_state));
                 },
 
+                (GET) (/about) => {
+                    let about = AboutResponse {
+                        version: firelight_version.to_string(),
+                        instance_name: args.instance_name.clone(),
+                    };
+                    return rouille::Response::json(&about);
+                },
+
                 (POST) (/control) => {
                     let maybe_input = post_input!(request, {
                         on: String,
                         brightness: Option<u8>,
                         color_hs: Vec<f32>,  // h in [0.0,360.0], s in [0.0, 100.0]
-                        color_xy: Vec<f32>,  // both args in [0.0,1.0] (untested)
-                        color_rgb: Vec<u8>,  // all args in [0,255] (untested)
                         effect: Option<String>,
                     });
                     let input = match maybe_input {

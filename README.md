@@ -17,8 +17,8 @@ This crate contains two binaries:
 
 Or, in a graphical
 
-               ws2811                 domain socket              Control                    ???
-    hardware <--------> controller  <---------------> renderer <------------> server <------------> user
+               ws2811                domain socket              Control                    ???
+    hardware <-------- controller  <--------------- renderer <------------ server  <------------ user
     
                     firelight-daemon                   (lib)              firelight-rest      (e.g.) homeassistant
     

@@ -35,9 +35,16 @@ impl Effect {
 /// Used to control the state of the renderer.
 #[derive(Copy, Clone, Debug)]
 pub struct Control {
+    /// Whether the lamp is currently on or off.
     pub on: bool,
+
+    /// The currently selected effect.
     pub effect: Effect,
+
+    /// Brightness in [0, 255]
     pub brightness: u8,
+
+    /// Hue in [0.0, 360.0], Saturation in [0.0, 100.0]
     pub color_hs: (f32, f32),
 }
 
